@@ -5,13 +5,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-module.exports = async function handler(req, res) {
+module.exports = async function (req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Only POST allowed' });
   }
 
   try {
-    console.log("🟡 Incoming req.body:", JSON.stringify(req.body, null, 2));
+    console.log("📥 Request body:", JSON.stringify(req.body, null, 2));
 
     const body = req.body || {};
     const answers = body?.data?.answers || [];
@@ -50,13 +50,13 @@ module.exports = async function handler(req, res) {
     ]);
 
     if (error) {
-      console.error('❌ Supabase insert error:', error);
+      console.error("❌ Supabase insert error:", error);
       return res.status(500).json({ error });
     }
 
     res.status(200).json({ success: true });
   } catch (err) {
-    console.error('❌ Unexpected error:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error("❌ Unexpected error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
