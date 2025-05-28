@@ -1,3 +1,19 @@
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Only POST allowed' });
+  }
+
+  try {
+    console.log("🌐 Full request body:", JSON.stringify(req.body, null, 2));
+  } catch (e) {
+    console.error("❌ Failed to stringify req.body:", e);
+  }
+
+  res.status(200).json({ ok: true });
+}
+
+
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
