@@ -11,52 +11,47 @@ module.exports = async function (req, res) {
   }
 
   try {
-    console.log("📥 Request body:", JSON.stringify(req.body, null, 2));
+    const data = req.body?.data || {};
+    const fields = data.fields || [];
 
-    const body = req.body || {};
-    const answers = body?.data?.answers || [];
+    // Helper: get value from a label
+    const getValue = (label) =>
+      fields.find((f) => f.label?.toLowerCase() === label.toLowerCase())?.value;
 
-    const getAnswer = (label) =>
-      answers.find((a) =>
-        a.question?.toLowerCase().includes(label.toLowerCase())
-      )?.answer;
+    // Helper: extract checkbox values as readable text
+    const getSelectedCheckboxes = (labelPrefix) => {
+      const checkboxField = fields.find(f => f.label?.startsWith(labelPrefix));
+      if (!checkboxField || !checkboxField.options) return [];
 
-    const submission_id = body?.data?.submission_id || 'unknown';
+      const selectedIds = checkboxField.value || [];
+      return checkboxField.options
+        .filter(opt => selectedIds.includes(opt.id))
+        .map(opt => opt.text);
+    };
 
-    const firstName = getAnswer('first name');
-    const lastName = getAnswer('last name');
-    const email = getAnswer('email');
-    const phone = getAnswer('phone number');
-    const instagram = getAnswer('instagram');
-    const whyJoin = getAnswer('why do you want to join');
-    const whatLookingFor = getAnswer('what are you looking for');
+    const payload = {
+      response_id: data.submissionId,
+      first_name: getValue('First Name'),
+      last_name: getValue('Last Name'),
+      email: getValue('Email address'),
+      phone_number: getValue('Phone number'),
+      instagram_handle: getValue('What is your instagram handle?'),
+      why_join: getValue('Why do you want to join fondue?'),
+      what_looking_for: getSelectedCheckboxes('What are you looking for?'),
+      raw: req.body,
+    };
 
-    const lookingForArray = Array.isArray(whatLookingFor)
-      ? whatLookingFor
-      : [whatLookingFor].filter(Boolean);
-
-    const { error } = await supabase.from('form_responses').insert([
-      {
-        response_id: submission_id,
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        phone_number: phone,
-        instagram_handle: instagram,
-        why_join: whyJoin,
-        what_looking_for: lookingForArray,
-        raw: body,
-      },
-    ]);
+    const { error } = await supabase.from('form_responses').insert([payload]);
 
     if (error) {
       console.error("❌ Supabase insert error:", error);
       return res.status(500).json({ error });
     }
 
+    console.log("✅ Submission stored successfully:", payload);
     res.status(200).json({ success: true });
   } catch (err) {
     console.error("❌ Unexpected error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
